@@ -13,7 +13,7 @@
 <body>
 
     <h1>Subir archivo grande (por partes)</h1>
-    <input type="file" id="fileInput">
+    <input type="file" id="fileInput" accept="video/mp4">
     <div id="progress-container">
         <div id="progress-bar"></div>
     </div>
