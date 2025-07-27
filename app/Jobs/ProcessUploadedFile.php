@@ -33,6 +33,7 @@ class ProcessUploadedFile implements ShouldQueue
     public function handle()
     {
 
+        //Log::info("nombre: " . $this->outputName);
         $video = Videos::where('uiid', $this->outputName)->first();
         $outputName = $this->outputName;
         //Log::info("Nombre de salida" . $outputName);
@@ -52,21 +53,24 @@ class ProcessUploadedFile implements ShouldQueue
         $format = new X264('aac');
 
         $relativePath = 'private/encrypted';
-        $fullPath = storage_path('app/' . $relativePath);
 
         $format->setKiloBitrate(1000);
+        $relativePath = 'private/encrypted';
+        $disk = Storage::disk('local'); // asegúrate de tener esta línea
 
-        if (!Storage::disk('local')->exists($relativePath)) {
-            File::makeDirectory($fullPath, 0755, true);
-        }
+        //Log::info("Verificando directorio: {$relativePath}");
+
+        if (!$disk->exists($relativePath)) {
+            //Log::info("Directorio NO existe. Creando...");
+            $disk->makeDirectory($relativePath);
+        } 
 
         try {
             FFMpeg::fromDisk('local')
                 ->open($this->path)
                 ->exportForHLS()
-
                 ->onProgress(function ($percentage) {
-                    Log::info("⚙️ Progreso: {$percentage}%");
+                    //Log::info("⚙️ Progreso: {$percentage}%");
                 })
                 ->setSegmentLength(10)
                 ->inFormat($format)
