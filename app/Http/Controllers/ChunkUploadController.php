@@ -48,6 +48,7 @@ class ChunkUploadController extends Controller
             Storage::deleteDirectory($tempDir);
             // Lanza un Job (si quieres hacer algo con el archivo)
             ProcessUploadedFile::dispatch($finalPath,  $file);
+            
             Videos::create([
                 'uiid' =>  $file,
                 'nombre' => $nombre,

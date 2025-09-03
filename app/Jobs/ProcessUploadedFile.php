@@ -15,7 +15,7 @@ use Illuminate\Support\Facades\File;
 class ProcessUploadedFile implements ShouldQueue
 {
     use Queueable;
-
+    //public $queue = 'video-processing';
     protected $path, $outputName;
 
     public function __construct($path, $outputName)
@@ -70,7 +70,7 @@ class ProcessUploadedFile implements ShouldQueue
                 ->open($this->path)
                 ->exportForHLS()
                 ->onProgress(function ($percentage) {
-                    //Log::info("⚙️ Progreso: {$percentage}%");
+                    Log::info("⚙️ Progreso: {$percentage}%");
                 })
                 ->setSegmentLength(10)
                 ->inFormat($format)
