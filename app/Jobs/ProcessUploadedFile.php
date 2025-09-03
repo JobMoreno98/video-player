@@ -63,7 +63,7 @@ class ProcessUploadedFile implements ShouldQueue
         if (!$disk->exists($relativePath)) {
             //Log::info("Directorio NO existe. Creando...");
             $disk->makeDirectory($relativePath);
-        } 
+        }
 
         try {
             FFMpeg::fromDisk('local')
@@ -88,8 +88,8 @@ class ProcessUploadedFile implements ShouldQueue
                 Log::error("❌ Playlist no encontrado: encrypted/{$outputName}.m3u8");
                 $video->status = "Error";
             }
-
-            Storage::disk('local')->delete($this->path);
+            //linea para eliminar el archivo
+            //Storage::disk('local')->delete($this->path);
         } catch (\Exception $e) {
             Log::error("❌ Error al procesar el archivo: " . $e->getMessage());
             $video->status = "Error";

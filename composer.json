@@ -9,8 +9,10 @@
         "php": "^8.2",
         "laravel-lang/common": "^6.7",
         "laravel/framework": "^12.0",
+        "laravel/jetstream": "^5.3",
+        "laravel/sanctum": "^4.0",
         "laravel/tinker": "^2.10.1",
-        "livewire/livewire": "^3.4",
+        "livewire/livewire": "^3.6.4",
         "livewire/volt": "^1.7.0",
         "pbmedia/laravel-ffmpeg": "^8.7"
     },
