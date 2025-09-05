@@ -78,7 +78,9 @@
     </div>
     @push('js')
         <script>
-            const CHUNK_SIZE = (2 * 1024 * 1024); // Por ejemplo: 2MB
+            const CHUNK_SIZE = 4 * 1024 * 1024; // 4MB
+            const MAX_CONCURRENT_UPLOADS = 3;
+            const MAX_RETRIES = 3;
 
             async function subirArchivo() {
                 const file = document.getElementById('fileInput').files[0];
@@ -93,45 +95,83 @@
 
                 const totalChunks = Math.ceil(file.size / CHUNK_SIZE);
                 const uploadId = Date.now();
+                let completedChunks = 0;
 
+                // Guardar progreso en localStorage
+                const key = `upload_${uploadId}`;
+                localStorage.setItem(key, JSON.stringify({
+                    nombre,
+                    fileName: file.name,
+                    totalChunks
+                }));
+
+                const queue = [];
                 for (let i = 0; i < totalChunks; i++) {
-                    const start = i * CHUNK_SIZE;
+                    queue.push(i);
+                }
+
+                async function uploadChunk(chunkIndex, retries = 0) {
+                    const start = chunkIndex * CHUNK_SIZE;
                     const end = Math.min(start + CHUNK_SIZE, file.size);
                     const chunk = file.slice(start, end);
 
                     const formData = new FormData();
                     formData.append('chunk', chunk);
-                    formData.append('chunk_number', i + 1);
+                    formData.append('chunk_number', chunkIndex + 1);
                     formData.append('total_chunks', totalChunks);
                     formData.append('upload_id', uploadId);
                     formData.append('file_name', file.name);
                     formData.append('nombre', nombre);
 
-                    const response = await fetch('{{ route('archivo.chunk') }}', {
-                        method: 'POST',
-                        body: formData,
-                        headers: {
-                            'X-CSRF-TOKEN': '{{ csrf_token() }}'
-                        }
-                    });
+                    try {
+                        const response = await fetch('{{ route('archivo.chunk') }}', {
+                            method: 'POST',
+                            body: formData,
+                            headers: {
+                                'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                            }
+                        });
 
-                    if (!response.ok) {
-                        if (response.status === 422) {
-                            const errorData = await response.json();
-                            const firstError = Object.values(errorData.errors)[0][0];
-                            status.textContent = '❌ ' + firstError;
+                        if (!response.ok) {
+                            throw new Error(`Error en chunk ${chunkIndex + 1}`);
+                        }
+
+                        completedChunks++;
+                        const percent = Math.round((completedChunks / totalChunks) * 100);
+                        progressBar.style.width = percent + '%';
+                        status.textContent = `Progreso: ${percent}%`;
+
+                    } catch (error) {
+                        if (retries < MAX_RETRIES) {
+                            console.warn(`Reintentando chunk ${chunkIndex + 1} (${retries + 1}/${MAX_RETRIES})`);
+                            await uploadChunk(chunkIndex, retries + 1);
                         } else {
-                            status.textContent = '❌ Error desconocido';
+                            status.textContent = `❌ Falló el chunk ${chunkIndex + 1} tras ${MAX_RETRIES} intentos`;
+                            throw error;
                         }
-                        return;
                     }
-
-                    const percent = Math.round(((i + 1) / totalChunks) * 100);
-                    progressBar.style.width = percent + '%';
-                    status.textContent = `Progreso: ${percent}%`;
                 }
 
-                status.textContent = '✅ Archivo subido completamente';
+                async function processQueue() {
+                    const workers = [];
+                    while (queue.length > 0 && workers.length < MAX_CONCURRENT_UPLOADS) {
+                        const chunkIndex = queue.shift();
+                        const worker = uploadChunk(chunkIndex).catch(() => {});
+                        workers.push(worker);
+                    }
+                    await Promise.all(workers);
+                    if (queue.length > 0) {
+                        await processQueue();
+                    }
+                }
+
+                try {
+                    await processQueue();
+                    status.textContent = '✅ Archivo subido completamente';
+                    localStorage.removeItem(key);
+                } catch (e) {
+                    console.error(e);
+                }
             }
         </script>
     @endpush

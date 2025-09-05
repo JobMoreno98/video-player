@@ -1,14 +1,17 @@
 @push('css')
     <style>
         .video-container {
-            width: 80%; /* ancho fijo */
+            width: 80%;
+            /* ancho fijo */
             aspect-ratio: 16 / 9;
             margin: 1rem auto;
             border-radius: 0.5rem;
-            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
             overflow: hidden;
-            background: black; /* fondo mientras carga video */
+            background: black;
+            /* fondo mientras carga video */
         }
+
         .video-container video {
             width: 100%;
             height: 100%;
@@ -29,14 +32,19 @@
         <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
             <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg p-6">
                 <h3 class="text-center text-2xl font-semibold mb-4 border-b pb-2 text-gray-700">{{ $video->nombre }}</h3>
-
+                <video width="720" controls muted autoplay playsinline>
+                    <source src="{{ route('video.stream', ['filename' => $video->uiid]) }}" type="video/mp4">
+                    Tu navegador no soporta el elemento video.
+                </video>
+                {{--  
                 <div class="video-container">
                     <video id="video" controls muted autoplay playsinline></video>
                 </div>
+                --}}
             </div>
         </div>
     </div>
-
+    {{--  
     @push('js')
         <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
         <script>
@@ -67,4 +75,5 @@
             });
         </script>
     @endpush
+    --}}
 </x-app-layout>

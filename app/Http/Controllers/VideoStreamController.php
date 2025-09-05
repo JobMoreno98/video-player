@@ -62,7 +62,7 @@ class VideoStreamController extends Controller
             $handle = fopen($fullPath, 'rb');
             fseek($handle, $start);
 
-            $bufferSize = 8192; // 8KB
+            $bufferSize = 65536; // 8KB
             $bytesSent = 0;
 
             while (!feof($handle) && $bytesSent < $length) {

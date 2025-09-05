@@ -10,6 +10,7 @@ use Illuminate\Support\Str;
 
 class ChunkUploadController extends Controller
 {
+
     public function upload(UploadChunkRequest $request)
     {
         $chunk = $request->file('chunk');
@@ -22,41 +23,63 @@ class ChunkUploadController extends Controller
         $disk = Storage::disk('local');
         $tempDir = "uploads/tmp/{$uploadId}";
 
+        // Crear directorio temporal si no existe
         if (!$disk->exists($tempDir)) {
             $disk->makeDirectory($tempDir);
         }
 
+        // Guardar chunk si no existe aún
         $chunkPath = "{$tempDir}/chunk_{$chunkNumber}";
-        Storage::put($chunkPath, file_get_contents($chunk->getRealPath()));
+        if (!$disk->exists($chunkPath)) {
+            $disk->put($chunkPath, file_get_contents($chunk->getRealPath()));
+        }
 
-        if ((int)$chunkNumber === (int)$totalChunks) {
+        // Verificar si ya llegaron todos los chunks
+        $chunksRecibidos = count($disk->files($tempDir));
+        if ($chunksRecibidos == $totalChunks) {
+            if ($disk->exists("{$tempDir}/.lock")) {
+                return response()->json(['status' => 'ensamblaje en curso']);
+            }
+
+            $disk->put("{$tempDir}/.lock", 'locked');
+
+            // Evitar duplicados en base de datos
+            if (Videos::where('nombre', $nombre)->exists()) {
+                return response()->json(['error' => 'Ya existe un video con ese nombre'], 422);
+            }
+
             $file = Str::slug($nombre, '_') . '_' . time();
             $path = 'uploads/complete';
             if (!$disk->exists($path)) {
-                
                 $disk->makeDirectory($path);
             }
-            $finalPath = "uploads/complete/{$fileName}";
+
+            $finalPath = "{$path}/{$file}";
             $final = fopen($disk->path($finalPath), 'ab');
 
+            // Ensamblar usando streams para archivos grandes
             for ($i = 1; $i <= $totalChunks; $i++) {
-                $chunkContent = Storage::get("{$tempDir}/chunk_{$i}");
-                fwrite($final, $chunkContent);
+                $chunkStream = fopen($disk->path("{$tempDir}/chunk_{$i}"), 'rb');
+                stream_copy_to_stream($chunkStream, $final);
+                fclose($chunkStream);
             }
 
+
             fclose($final);
-            Storage::deleteDirectory($tempDir);
-            // Lanza un Job (si quieres hacer algo con el archivo)
-            ProcessUploadedFile::dispatch($finalPath,  $file);
-            
+            $disk->deleteDirectory($tempDir);
+
+            // Registrar en base de datos
             Videos::create([
-                'uiid' =>  $file,
+                'uiid' => $file,
                 'nombre' => $nombre,
-                'status' => 'En proceso'
+                'status' => 'Finalizado'
             ]);
+            $disk->delete("{$tempDir}/.lock");
+
+
+            // Opcional: lanzar Job para procesar el archivo
+            // ProcessUploadedFile::dispatch($finalPath, $file);
         }
-
-
 
         return response()->json(['status' => 'chunk recibido']);
     }

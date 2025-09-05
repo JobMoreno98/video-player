@@ -9,8 +9,7 @@
         <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
             <div class="flex justify-end mb-4">
                 <a href="{{ route('videos-reproductor.create') }}"
-                    class="bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 px-4 rounded" target="_blank"
-                    rel="noopener noreferrer">
+                    class="bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 px-4 rounded"  rel="noopener noreferrer">
                     + Crear video
                 </a>
             </div>

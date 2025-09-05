@@ -25,12 +25,12 @@ class UploadChunkRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'nombre' => 'required|unique:videos',
-            'chunk' => 'required|file',
-            'upload_id' => 'required|string',
-            'chunk_number' => 'required|integer',
-            'total_chunks' => 'required|integer',
-            'file_name' => 'required|string',
+            'nombre' => 'required|string|max:255',
+            'chunk' => 'required|file|max:51200', // 50MB por chunk
+            'upload_id' => 'required|string|max:100',
+            'chunk_number' => 'required|integer|min:1',
+            'total_chunks' => 'required|integer|min:1',
+            'file_name' => 'required|string|max:255',
         ];
     }
 
