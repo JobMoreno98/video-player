@@ -77,7 +77,7 @@ class ProcessUploadedFile implements ShouldQueue
                 ->withEncryptionKey($key, "{$outputName}.key", $keyUrl) // Laravel-FFMpeg debería generar el keyinfo con la URL pública configurada, si no, tendrás que hacerlo manualmente
                 ->addFormat((new \FFMpeg\Format\Video\X264)->setKiloBitrate(500))
                 ->addFormat((new \FFMpeg\Format\Video\X264)->setKiloBitrate(1000))
-                ->addFormat((new \FFMpeg\Format\Video\X264)->setKiloBitrate(2000))
+                //->addFormat((new \FFMpeg\Format\Video\X264)->setKiloBitrate(2000))
                 ->toDisk('local')
                 ->save("encrypted/" . $outputName . ".m3u8");
 
